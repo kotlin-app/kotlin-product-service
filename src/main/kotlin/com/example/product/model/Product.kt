@@ -10,6 +10,6 @@ class Product(
     val name: String,
     val price: Int,
     val description: String,
-    val stock: Int,
+    var stock: Int,
     val category: String,
 )
