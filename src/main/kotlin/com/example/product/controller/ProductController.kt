@@ -7,10 +7,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 
 @Tag(name = "Products", description = "商品情報API")
@@ -18,10 +15,19 @@ import org.springframework.web.server.ResponseStatusException
 @RequestMapping("/products")
 class ProductController(private val repository: ProductRepository) {
 
-    @Operation(summary = "商品一覧取得", description = "登録されている全商品を返します")
+    @Operation(summary = "商品一覧・検索取得", description = "q=検索キーワード、category=カテゴリ、minPrice/maxPrice=価格帯でフィルタ可能")
     @ApiResponse(responseCode = "200", description = "取得成功")
     @GetMapping
-    fun getAll(): List<Product> = repository.findAll()
+    fun getAll(
+        @RequestParam(required = false) q: String?,
+        @RequestParam(required = false) category: String?,
+        @RequestParam(required = false) minPrice: Int?,
+        @RequestParam(required = false) maxPrice: Int?,
+    ): List<Product> =
+        if (q == null && category == null && minPrice == null && maxPrice == null)
+            repository.findAll()
+        else
+            repository.search(q?.takeIf { it.isNotBlank() }, category?.takeIf { it.isNotBlank() }, minPrice, maxPrice)
 
     @Operation(summary = "商品詳細取得", description = "指定IDの商品を返します")
     @ApiResponse(responseCode = "200", description = "取得成功")
