@@ -7,9 +7,9 @@ import jakarta.persistence.*
 class Product(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
-    val name: String,
-    val price: Int,
-    val description: String,
+    var name: String,
+    var price: Int,
+    var description: String,
     var stock: Int,
-    val category: String,
+    var category: String,
 )

@@ -10,6 +10,9 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 
+data class CreateProductRequest(val name: String, val price: Int, val description: String, val stock: Int, val category: String)
+data class UpdateProductRequest(val name: String?, val price: Int?, val description: String?, val stock: Int?, val category: String?)
+
 @Tag(name = "Products", description = "商品情報API")
 @RestController
 @RequestMapping("/products")
@@ -38,4 +41,38 @@ class ProductController(private val repository: ProductRepository) {
     ): Product =
         repository.findById(id)
             .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: $id") }
+
+    @Operation(summary = "商品作成（管理者）")
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    fun create(@RequestBody req: CreateProductRequest): Product =
+        repository.save(Product(name = req.name, price = req.price, description = req.description, stock = req.stock, category = req.category))
+
+    @Operation(summary = "商品更新（管理者）")
+    @PutMapping("/{id}")
+    fun update(@PathVariable id: Long, @RequestBody req: UpdateProductRequest): Product {
+        val p = repository.findById(id).orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: $id") }
+        req.name?.let { p.name = it }
+        req.price?.let { p.price = it }
+        req.description?.let { p.description = it }
+        req.stock?.let { p.stock = it }
+        req.category?.let { p.category = it }
+        return repository.save(p)
+    }
+
+    @Operation(summary = "在庫更新（管理者）")
+    @PatchMapping("/{id}/stock")
+    fun updateStock(@PathVariable id: Long, @RequestBody body: Map<String, Int>): Product {
+        val p = repository.findById(id).orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: $id") }
+        p.stock = body["stock"] ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "stock is required")
+        return repository.save(p)
+    }
+
+    @Operation(summary = "商品削除（管理者）")
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun delete(@PathVariable id: Long) {
+        if (!repository.existsById(id)) throw ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: $id")
+        repository.deleteById(id)
+    }
 }
